@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="fa">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Clean the Park</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="shortcut icon" href="Image/icon.png">
+
+</head>
+
+<body>
+
+  <div id="startScreen">
+    <div id="startBox">
+
+      <img id="corner1" class="corner-img" src="Image/tree.png" alt="corner deco" />
+      <img id="corner2" class="corner-img" src="Image/tree1.png" alt="corner deco" />
+      <h1>Clean the Park!</h1>
+      <button id="startBtn">START</button>
+    </div>
+  </div>
+  <div id="infoScreen">
+    <div id="infoBox">
+      <h1>Clean the Park - Japan Style</h1>
+      <p>In Japan, a precise waste separation system was introduced in the 1990s. <br>
+        This is one of the reasons it has become one of the cleanest countries in the world. <br>
+        In our game, we want to sort our trash just like they do, into three categories: <br>
+        <br>
+      <ul>
+        <li>Combustible (food and paper towels) </li>
+        <li>Non-combustible (batteries and glass) </li>
+        <li>Recyclable (paper and plastic bottles) </li>
+      </ul>
+      <br>
+      This method helps reduce the amount of waste and allows many things to be reused. <br>
+      Now it’s your turn! See if you can throw the trash into the correct bin like a true Japanese pro.
+      </p>
+      <p id="tapContinue">Tap To Continue</p>
+    </div>
+  </div>
+  <!-- HUD -->
+  <div id="hud">
+    <h2>Clean the Park</h2>
+    <div id="hud-info">
+      Level: <span id="level">1</span> |
+      Score: <span id="score">0</span> |
+      Trash left: <span id="left">0</span> |
+      Time: <span id="time">80s</span>
+    </div>
+    <div class="hud-buttons">
+      <button id="pauseBtn">Pause</button>
+      <button id="restartBtn">Restart</button>
+    </div>
+  </div>
+
+
+  <img src="Image/burnable.png" id="bin-center" class="bin" data-type="burnable">
+  <img src="Image/nonburnable.png" id="bin-left" class="bin" data-type="nonburnable">
+  <img src="Image/recyclable.png" id="bin-right" class="bin" data-type="recyclable">
+
+  <img src="Image/paw.png" id="paw">
+
+
+  <audio id="bgMusic" src="https://www.bensound.com/bensound-music/bensound-funkyelement.mp3" preload="auto"
+    loop></audio>
+  <audio src="dropSound.mp3" preload="auto" id="dropSound"></audio>
+
+  <div id="gameOverScreen">
+    <div id="gameOverBox">
+      <h1>GAME OVER</h1>
+      <p>Time is Out!</p>
+      <button id="retryBtn">Play Again</button>
+    </div>
+  </div>
+
+  <script>
+    let level = 1,
+      trashCount = 3,
+      recycled = 0,
+      score = 0,
+      paused = false,
+      musicStarted = false;
+
+    const bins = document.querySelectorAll(".bin");
+    const hud = document.getElementById("hud");
+    const levelEl = document.getElementById("level");
+    const scoreEl = document.getElementById("score");
+    const leftEl = document.getElementById("left");
+    const paw = document.getElementById("paw");
+    const dropSound = document.getElementById("dropSound");
+    const catchSound = document.getElementById("catchSound");
+    const bgMusic = document.getElementById("bgMusic");
+
+    const trashImages = [
+      { src: "Image/pizza.png", type: "burnable" },
+      { src: "Image/apple.png", type: "burnable" },
+      { src: "Image/avocado.png", type: "burnable" },
+      { src: "Image/tissue.png", type: "burnable" },
+
+      { src: "Image/glassbottle.png", type: "nonburnable" },
+      { src: "Image/glasscup.png", type: "nonburnable" },
+      { src: "Image/battery.png", type: "nonburnable" },
+
+      { src: "Image/plasticbottle.png", type: "recyclable" },
+      { src: "Image/box.png", type: "recyclable" },
+      { src: "Image/sodacan.png", type: "recyclable" },
+    ];
+
+    function updateHUD() {
+      levelEl.textContent = level;
+      scoreEl.textContent = score;
+      leftEl.textContent = trashCount - recycled;
+    }
+
+    bins.forEach(bin => {
+      bin.addEventListener("dragover", e => e.preventDefault());
+      bin.addEventListener("drop", e => {
+        e.preventDefault();
+        if (paused) return;
+        const dragging = document.querySelector(".trash[data-dragging='true']");
+        if (dragging) {
+          if (dragging.dataset.type === bin.dataset.type) {
+
+            dragging.remove();
+            recycled++; score += 10;
+            dropSound.currentTime = 0;
+            dropSound.play();
+            bin.classList.add("active");
+            setTimeout(() => bin.classList.remove("active"), 300);
+          } else {
+            dragging.classList.add("wiggle");
+            document.body.classList.add("shake");
+            setTimeout(() => {
+              dragging.classList.remove("wiggle");
+              document.body.classList.remove("shake");
+            }, 500);
+
+          }
+
+          if (recycled >= trashCount) {
+            level++; recycled = 0; trashCount += 2;
+            timeleft += 10;
+            createTrash(trashCount);
+          }
+          updateHUD();
+        }
+      });
+    });
+
+    function createTrash(num) {
+      for (let i = 0; i < num; i++) {
+        const t = document.createElement("div");
+        t.className = "trash";
+        const img = document.createElement("img");
+        const random = trashImages[Math.floor(Math.random() * trashImages.length)];
+        img.src = random.src;
+        t.dataset.type = random.type;
+
+        t.appendChild(img);
+
+        t.style.left = Math.random() * (window.innerWidth - 80) + "px";
+        t.style.top = Math.random() * (window.innerHeight - 200) + "px";
+        t.draggable = true;
+
+        t.addEventListener("dragstart", e => {
+          if (paused) { e.preventDefault(); return; }
+          e.dataTransfer.setData("text/plain", "trash");
+          t.dataset.dragging = "true";
+        });
+        t.addEventListener("dragend", () => t.dataset.dragging = "false");
+
+        document.body.appendChild(t);
+      }
+      updateHUD();
+    }
+
+    function chaos() {
+      if (!paused && Math.random() < 0.01) {
+        paw.style.left = Math.random() * (window.innerWidth - 100) + "px";
+        paw.style.top = Math.random() * (window.innerHeight - 100) + "px";
+        paw.style.display = "block";
+        setTimeout(() => paw.style.display = "none", 700);
+
+        document.querySelectorAll(".trash").forEach(t => {
+          t.style.left = Math.random() * (window.innerWidth - 80) + "px";
+          t.style.top = Math.random() * (window.innerHeight - 150) + "px";
+        });
+      }
+      requestAnimationFrame(chaos);
+    }
+
+    document.getElementById("pauseBtn").addEventListener("click", () => {
+      paused = !paused;
+      document.getElementById("pauseBtn").innerText = paused ? "Resume" : "Pause";
+      if (paused) bgMusic.pause(); else if (musicStarted) bgMusic.play();
+    });
+
+    document.getElementById("restartBtn").addEventListener("click", () => {
+      document.querySelectorAll(".trash").forEach(t => t.remove());
+      level = 1; trashCount = 3; recycled = 0; score = 0;
+      updateHUD(); createTrash(trashCount);
+    });
+
+    document.getElementById("startBtn").addEventListener("click", () => {
+      document.getElementById("startScreen").style.display = "none";
+      document.getElementById("infoScreen").style.display = "flex";
+    });
+    document.getElementById("tapContinue").addEventListener("click", () => {
+      document.getElementById("infoScreen").style.display = "none";
+      hud.style.display = "flex";
+      bins.forEach(b => b.style.display = "block");
+      createTrash(trashCount);
+      chaos();
+      startTimer();
+      if (!musicStarted) { bgMusic.play(); musicStarted = true; }
+    });
+
+
+    let timeleft = 80;
+    let timer;
+
+    function startTimer() {
+      timeleft = 80;
+      document.getElementById("time").textContent = timeleft;
+
+      timer = setInterval(() => {
+        if (!paused) {
+          timeleft--;
+          document.getElementById("time").textContent = timeleft;
+          if (timeleft <= 0) {
+            clearInterval(timer);
+            GameOver();
+          }
+        }
+      }, 1000);
+    }
+
+    function GameOver() {
+      clearInterval(timer);
+      document.getElementById("gameOverScreen").style.display = "flex";
+    }
+
+    document.getElementById("retryBtn").addEventListener("click", () => {
+      document.getElementById("gameOverScreen").style.display = "none";
+      document.querySelectorAll(".trash").forEach(t => t.remove());
+      level = 1; trashCount = 3; recycled = 0; score = 0;
+      updateHUD();
+      createTrash(trashCount);
+      startTimer();
+    });
+
+    let currentTrash = null; 
+
+    document.addEventListener("touchstart", (e) => {
+      if (e.target.closest(".trash")){
+        currentTrash = e.target.closest(".trash");
+        currentTrash.style.position = "absolute";
+        currentTrash.style.zIndex = 1000;
+      }
+    });
+
+    document.addEventListener("touchmove", (e) => {
+      if (currentTrash){
+        const touch = e.touches[0];
+        currentTrash.style.left = (touch.pageX - currentTrash.offsetWidth / 2) + "px";
+        currentTrash.style.top = (touch.pagey - currentTrash.offsetHeigth / 2) + "px";
+      }
+    });
+
+    document.addEventListener("touchend", (e) => {
+      if (currentTrash) {
+        const touch = e.changedTouches[0];
+        bins.forEach(bin => {
+          const binRect = bin.getBoundingClientRect();
+          if (
+            touch.clientX > binRect.left &&
+            touch.clientX < binRect.right &&
+            touch.clientY > binRect.top &&
+            touch.clientY < binRect.bottom
+          ) {
+            if (currentTrash.dataset.type === bin.dataset.type) {
+              currentTrash.remove();
+              recycled++; score += 10;
+              catchSound.currentTime = 0; catchSound.play();
+              bin.classList.add("active");
+              setTimeout(() => bin.classList.remove("active"), 300);
+            } else {
+              currentTrash.classList.add("wiggle");
+              setTimeout(() => currentTrash.classList.remove("wiggle"), 500);
+            }
+
+            if (recycled >= trashCount) {
+              level++; recycled = 0; trashCount += 2;
+              createTrash(trashCount);
+            }
+            updateHUD();
+          }
+        });
+        currentTrash = null;
+      }
+    });
+
+  </script>
+</body>
+
+</html>
