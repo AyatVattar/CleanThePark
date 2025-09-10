@@ -263,49 +263,37 @@
       }
     });
 
-    document.addEventListener("touchmove", (e) => {
-      if (currentTrash){
-        const touch = e.touches[0];
-        currentTrash.style.left = (touch.pageX - currentTrash.offsetWidth / 2) + "px";
-        currentTrash.style.top = (touch.pageY - currentTrash.offsetHeight / 2) + "px";
-      }
-    });
+ 
+document.addEventListener("touchstart", function(e) {
+    let touch = e.touches[0];
+    let target = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (target && target.classList.contains("trash")) {
+        selectedTrash = target;
+        offsetX = touch.clientX - target.offsetLeft;
+        offsetY = touch.clientY - target.offsetTop;
+    }
+});
 
-    document.addEventListener("touchend", (e) => {
-      if (currentTrash) {
-        const touch = e.changedTouches[0];
-        bins.forEach(bin => {
-          const binRect = bin.getBoundingClientRect();
-          if (
-            touch.clientX > binRect.left &&
-            touch.clientX < binRect.right &&
-            touch.clientY > binRect.top &&
-            touch.clientY < binRect.bottom
-          ) {
-            if (currentTrash.dataset.type === bin.dataset.type) {
-              currentTrash.remove();
-              recycled++; score += 10;
-              catchSound.currentTime = 0; catchSound.play();
-              bin.classList.add("active");
-              setTimeout(() => bin.classList.remove("active"), 300);
-            } else {
-              currentTrash.classList.add("wiggle");
-              setTimeout(() => currentTrash.classList.remove("wiggle"), 500);
-            }
+document.addEventListener("touchmove", function(e) {
+    if (selectedTrash) {
+        let touch = e.touches[0];
 
-            if (recycled >= trashCount) {
-              level++; recycled = 0; trashCount += 2;
-              createTrash(trashCount);
-            }
-            updateHUD();
-          }
-        });
-        currentTrash = null;
-      }
-    });
+        selectedTrash.style.left = (touch.clientX - offsetX) + "px";
+        selectedTrash.style.top = (touch.clientY - offsetY) + "px";
+    }
+});
+
+document.addEventListener("touchend", function(e) {
+    if (selectedTrash) {
+        checkTrashDrop(selectedTrash);
+        selectedTrash = null;
+    }
+});
+
 
   </script>
 </body>
 
 
 </html>
+
