@@ -256,6 +256,7 @@
 
     document.addEventListener("touchstart", (e) => {
       if (e.target.closest(".trash")){
+        e.preventDefault();
         currentTrash = e.target.closest(".trash");
         currentTrash.style.position = "absolute";
         currentTrash.style.zIndex = 1000;
@@ -266,7 +267,7 @@
       if (currentTrash){
         const touch = e.touches[0];
         currentTrash.style.left = (touch.pageX - currentTrash.offsetWidth / 2) + "px";
-        currentTrash.style.top = (touch.pagey - currentTrash.offsetHeigth / 2) + "px";
+        currentTrash.style.top = (touch.pageY - currentTrash.offsetHeight / 2) + "px";
       }
     });
 
@@ -305,5 +306,6 @@
 
   </script>
 </body>
+
 
 </html>
